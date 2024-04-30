@@ -1,81 +1,31 @@
-def get_score_A(days):
-    if days <= 2:
-        return 10
-    elif days <= 4:
-        return 7.5
-    elif days <= 6:
-        return 5
-    elif days <= 8:
-        return 2.5
-    else:
-        return 0
+from flask import Flask, request, render_template
 
-def get_score_B(updates_per_day):
-    if updates_per_day >= 3:
-        return 10
-    elif updates_per_day >= 2:
-        return 7.5
-    elif updates_per_day >= 1:
-        return 5
-    elif updates_per_day >= 0.5:
-        return 2.5
-    else:
-        return 0
+app = Flask(__name__)
 
-def get_score_C(ratio):
-    if ratio >= 5.0:
-        return 10
-    elif ratio >= 4.0:
-        return 7.5
-    elif ratio >= 2.0:
-        return 5
-    elif ratio >= 1.0:
-        return 2.5
-    else:
-        return 0
+def calculate_sftp_score(days, updates_per_day, ratio, percent_not_delivered, percent_oos_fail):
+    score_a = 10 if days <= 2 else 7.5 if days <= 4 else 5 if days <= 6 else 2.5 if days <= 8 else 0
+    score_b = 10 if updates_per_day >= 3 else 7.5 if updates_per_day >= 2 else 5 if updates_per_day >= 1 else 2.5 if updates_per_day >= 0.5 else 0
+    score_c = 10 if ratio >= 5.0 else 7.5 if ratio >= 4.0 else 5 if ratio >= 2.0 else 2.5 if ratio >= 1.0 else 0
+    score_d = 10 if percent_not_delivered <= 1 else 7.5 if percent_not_delivered <= 2 else 5 if percent_not_delivered <= 5 else 2.5 if percent_not_delivered <= 10 else 0
+    score_e = 10 if percent_oos_fail <= 1 else 7.5 if percent_oos_fail <= 2 else 5 if percent_oos_fail <= 5 else 2.5 if percent_oos_fail <= 10 else 0
+    total_score = ((score_a + score_b + score_c + score_d + score_e) / 5) * 10
+    return total_score
 
-def get_score_D(percent_not_delivered):
-    if percent_not_delivered <= 1:
-        return 10
-    elif percent_not_delivered <= 2:
-        return 7.5
-    elif percent_not_delivered <= 5:
-        return 5
-    elif percent_not_delivered <= 10:
-        return 2.5
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        days = float(request.form.get("days"))
+        updates_per_day = float(request.form.get("updates_per_day"))
+        ratio = float(request.form.get("ratio"))
+        percent_not_delivered = float(request.form.get("percent_not_delivered"))
+        percent_oos_fail = float(request.form.get("percent_oos_fail"))
+        
+        total_sftp_score = calculate_sftp_score(days, updates_per_day, ratio, percent_not_delivered, percent_oos_fail)
+        return render_template("index.html", total_sftp_score=total_sftp_score)
     else:
-        return 0
-
-def get_score_E(percent_oos_fail):
-    if percent_oos_fail <= 1:
-        return 10
-    elif percent_oos_fail <= 2:
-        return 7.5
-    elif percent_oos_fail <= 5:
-        return 5
-    elif percent_oos_fail <= 10:
-        return 2.5
-    else:
-        return 0
-
-def main():
-    # Request inputs
-    days = float(input("Enter the number of days vendors update their stock (A): "))
-    updates_per_day = float(input("Enter the average number of stock updates per day (B): "))
-    ratio = float(input("Enter the ratio of stock SFTP updates vs total assortment (C): "))
-    percent_not_delivered = float(input("Enter the percentage of items not delivered (D): "))
-    percent_oos_fail = float(input("Enter the percentage of OOS fail rate (E): "))
-    
-    # Calculate scores
-    score_A = get_score_A(days)
-    score_B = get_score_B(updates_per_day)
-    score_C = get_score_C(ratio)
-    score_D = get_score_D(percent_not_delivered)
-    score_E = get_score_E(percent_oos_fail)
-    
-    # Calculate total score
-    total_score = ((score_A + score_B + score_C + score_D + score_E) / 5) * 10
-    print(f"Total SFTP Score: {total_score}")
+        # Initial load or no data posted yet
+        return render_template("index.html", total_sftp_score="Enter the values to calculate the SFTP score")
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)
+
